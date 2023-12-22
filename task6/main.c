@@ -11,39 +11,39 @@
 // This function will be called when we write the Misc Device file
 static ssize_t misc_write(struct file *file, const char __user *buf, size_t len, loff_t *ppos)
 {
-        if (len != EUDYPTULA_ID_LENGTH) {
-                pr_alert("message length isn't good. %d != %d\n", len, EUDYPTULA_ID_LENGTH);
-                return -EINVAL;
-        }
+	if (len != EUDYPTULA_ID_LENGTH) {
+		pr_alert("message length isn't good. %d != %d\n", len, EUDYPTULA_ID_LENGTH);
+		return -EINVAL;
+	}
 
-        char message[EUDYPTULA_ID_LENGTH] = {0};
+	char message[EUDYPTULA_ID_LENGTH] = {0};
 
-        if (copy_from_user(message, buf, EUDYPTULA_ID_LENGTH)) {
-                pr_alert("copy_from_user failed\n");
-                return -EFAULT;
-        }
+	if (copy_from_user(message, buf, EUDYPTULA_ID_LENGTH)) {
+		pr_alert("copy_from_user failed\n");
+		return -EFAULT;
+	}
 
-        if (strncmp(message, EUDYPTULA_ID, EUDYPTULA_ID_LENGTH)) {
-                pr_alert("'%s' != '%s'\n", message, EUDYPTULA_ID);
-                return -EINVAL;
-        }
+	if (strncmp(message, EUDYPTULA_ID, EUDYPTULA_ID_LENGTH)) {
+		pr_alert("'%s' != '%s'\n", message, EUDYPTULA_ID);
+		return -EINVAL;
+	}
 
-        pr_alert("'%s' == '%s'\n", message, EUDYPTULA_ID);
-        return len;
+	pr_alert("'%s' == '%s'\n", message, EUDYPTULA_ID);
+	return len;
 }
 
 // This function will be called when we read the Misc Device file
 static ssize_t misc_read(struct file *filp, char __user *buf, size_t count, loff_t *f_pos)
 {
-        if (*f_pos >= EUDYPTULA_ID_LENGTH || copy_to_user(buf, EUDYPTULA_ID, EUDYPTULA_ID_LENGTH)) {
-                pr_alert("copy_to_user failed\n");
-                return 0;
-        }
-        pr_alert("copy_to_user success\n");
-        *f_pos += EUDYPTULA_ID_LENGTH;
-        return EUDYPTULA_ID_LENGTH;
+	if (*f_pos >= EUDYPTULA_ID_LENGTH || copy_to_user(buf, EUDYPTULA_ID, EUDYPTULA_ID_LENGTH)) {
+		pr_alert("copy_to_user failed\n");
+		return 0;
+	}
+	pr_alert("copy_to_user success\n");
+	*f_pos += EUDYPTULA_ID_LENGTH;
+	return EUDYPTULA_ID_LENGTH;
 }
-// File operation structure 
+// File operation structure
 static const struct file_operations fops = {
     .owner          = THIS_MODULE,
     .write          = misc_write,
@@ -62,8 +62,8 @@ static int __init misc_init(void)
 
     error = misc_register(&misc_device);
     if (error) {
-        pr_err("misc_register failed!!!\n");
-        return error;
+	pr_err("misc_register failed!!!\n");
+	return error;
     }
 
     pr_info("misc_register init done!!!\n");
