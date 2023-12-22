@@ -1,0 +1,2 @@
+ACTION=="add", SUBSYSTEM=="usb", DRIVER=="usbhid", RUN+="/tmp/add.sh"
+ACTION=="remove", SUBSYSTEM=="input", RUN+="/tmp/remove.sh"
