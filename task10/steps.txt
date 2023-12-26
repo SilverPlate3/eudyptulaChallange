@@ -1,0 +1,5 @@
+git clone {repo}
+# Modify {target file}
+git add {target file}
+git commit -m "Subject of your commit. This will also be the name of the patch file and its subject"
+git format-patch -1 HEAD   # -1 HEAD if only 1 commit and straight out of develop

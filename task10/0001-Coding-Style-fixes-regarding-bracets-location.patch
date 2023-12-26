@@ -1,0 +1,53 @@
+From 932e21c547bb24d35a1b75d59434487c9ad25e7b Mon Sep 17 00:00:00 2001
+From: root <silverariel08@gmail.com>
+Date: Tue, 26 Dec 2023 09:04:22 +0200
+Subject: [PATCH] Coding Style fixes regarding bracets location
+
+---
+ .../pci/isp/kernels/vf/vf_1.0/ia_css_vf.host.c       | 12 ++++++------
+ 1 file changed, 6 insertions(+), 6 deletions(-)
+
+diff --git a/drivers/staging/media/atomisp/pci/isp/kernels/vf/vf_1.0/ia_css_vf.host.c b/drivers/staging/media/atomisp/pci/isp/kernels/vf/vf_1.0/ia_css_vf.host.c
+index aecdcbe04ce1..588d1c90fa3c 100644
+--- a/drivers/staging/media/atomisp/pci/isp/kernels/vf/vf_1.0/ia_css_vf.host.c
++++ b/drivers/staging/media/atomisp/pci/isp/kernels/vf/vf_1.0/ia_css_vf.host.c
+@@ -58,7 +58,8 @@ int
+ sh_css_vf_downscale_log2(
+     const struct ia_css_frame_info *out_info,
+     const struct ia_css_frame_info *vf_info,
+-    unsigned int *downscale_log2) {
++    unsigned int *downscale_log2) 
++{
+ 	unsigned int ds_log2 = 0;
+ 	unsigned int out_width;
+ 
+@@ -74,8 +75,7 @@ sh_css_vf_downscale_log2(
+ 	* test for the height since the vmem buffers only put restrictions on
+ 	* the width of a line, not on the number of lines in a frame.
+ 	*/
+-	while (out_width >= vf_info->res.width)
+-	{
++	while (out_width >= vf_info->res.width) {
+ 		ds_log2++;
+ 		out_width /= 2;
+ 	}
+@@ -95,13 +95,13 @@ configure_kernel(
+     const struct ia_css_frame_info *out_info,
+     const struct ia_css_frame_info *vf_info,
+     unsigned int *downscale_log2,
+-    struct ia_css_vf_configuration *config) {
++    struct ia_css_vf_configuration *config) 
++{
+ 	int err;
+ 	unsigned int vf_log_ds = 0;
+ 
+ 	/* First compute value */
+-	if (vf_info)
+-	{
++	if (vf_info) {
+ 		err = sh_css_vf_downscale_log2(out_info, vf_info, &vf_log_ds);
+ 		if (err)
+ 			return err;
+-- 
+2.43.0
+
