@@ -1,0 +1,65 @@
+From 872e0dbb01b8d71aa40e254a92cd759bb406599f Mon Sep 17 00:00:00 2001
+From: root <silverariel08@gmail.com>
+Date: Sat, 30 Dec 2023 21:44:28 +0200
+Subject: [PATCH] add id to pcskr
+
+---
+ drivers/input/misc/pcspkr.c | 35 +++++++++++++++++++++++++++++++++++
+ 1 file changed, 35 insertions(+)
+
+diff --git a/drivers/input/misc/pcspkr.c b/drivers/input/misc/pcspkr.c
+index 897854fd245f..e250cd5004ac 100644
+--- a/drivers/input/misc/pcspkr.c
++++ b/drivers/input/misc/pcspkr.c
+@@ -20,6 +20,35 @@ MODULE_DESCRIPTION("PC Speaker beeper driver");
+ MODULE_LICENSE("GPL");
+ MODULE_ALIAS("platform:pcspkr");
+ 
++#define EUDYPTULA_ID "fake_id_123"
++#define EUDYPTULA_ID_LENGTH 11 // Without the NULL
++
++static ssize_t id_show(struct device *dev, struct device_attribute *attr, char *buf) 
++{ 
++    return sprintf(buf, "%s\n", EUDYPTULA_ID);
++} 
++
++static ssize_t id_store(struct device *cdev, struct device_attribute *attr, const char *buf, size_t len) 
++{ 
++        if (len != EUDYPTULA_ID_LENGTH) {
++		pr_alert("message length isn't good. %lu != %d\n", len, EUDYPTULA_ID_LENGTH);
++		return -EINVAL;
++	}
++
++	char message[EUDYPTULA_ID_LENGTH] = {0};
++        sscanf(buf, "%s", &message);
++
++	if (strncmp(message, EUDYPTULA_ID, EUDYPTULA_ID_LENGTH)) {
++		pr_alert("'%s' != '%s'\n", message, EUDYPTULA_ID);
++		return -EINVAL;
++	}
++
++	pr_alert("'%s' == '%s'\n", message, EUDYPTULA_ID);
++	return len;
++} 
++
++static DEVICE_ATTR(id, 0664, id_show, id_store); // Read-only permissions.
++
+ static int pcspkr_event(struct input_dev *dev, unsigned int type,
+ 			unsigned int code, int value)
+ {
+@@ -90,6 +119,12 @@ static int pcspkr_probe(struct platform_device *dev)
+ 		return err;
+ 	}
+ 
++	err = device_create_file(&dev->dev, &dev_attr_id);
++    if (err) {
++    	input_unregister_device(pcspkr_dev);
++    	return err;
++    }
++
+ 	platform_set_drvdata(dev, pcspkr_dev);
+ 
+ 	return 0;
+-- 
+2.43.0
+
