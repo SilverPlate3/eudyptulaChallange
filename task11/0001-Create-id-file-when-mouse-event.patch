@@ -1,0 +1,80 @@
+From d0ce80b1e5f1344fb2a824ce8322a23deadd11ea Mon Sep 17 00:00:00 2001
+From: root <silverariel08@gmail.com>
+Date: Sun, 31 Dec 2023 08:07:42 +0200
+Subject: [PATCH] Create id file when mouse event
+
+---
+ drivers/input/mousedev.c | 36 ++++++++++++++++++++++++++++++++++--
+ 1 file changed, 34 insertions(+), 2 deletions(-)
+
+diff --git a/drivers/input/mousedev.c b/drivers/input/mousedev.c
+index 505c562a5daa..ee1f7de74da8 100644
+--- a/drivers/input/mousedev.c
++++ b/drivers/input/mousedev.c
+@@ -29,6 +29,35 @@ MODULE_AUTHOR("Vojtech Pavlik <vojtech@ucw.cz>");
+ MODULE_DESCRIPTION("Mouse (ExplorerPS/2) device interfaces");
+ MODULE_LICENSE("GPL");
+ 
++#define EUDYPTULA_ID "fake_id_123"
++#define EUDYPTULA_ID_LENGTH 11 // Without the NULL
++
++static ssize_t id_show(struct device *dev, struct device_attribute *attr, char *buf) 
++{ 
++    return sprintf(buf, "%s\n", EUDYPTULA_ID);
++} 
++
++static ssize_t id_store(struct device *cdev, struct device_attribute *attr, const char *buf, size_t len) 
++{ 
++        if (len != EUDYPTULA_ID_LENGTH) {
++		pr_alert("message length isn't good. %lu != %d\n", len, EUDYPTULA_ID_LENGTH);
++		return -EINVAL;
++	}
++
++	char message[EUDYPTULA_ID_LENGTH] = {0};
++        sscanf(buf, "%s", &message);
++
++	if (strncmp(message, EUDYPTULA_ID, EUDYPTULA_ID_LENGTH)) {
++		pr_alert("'%s' != '%s'\n", message, EUDYPTULA_ID);
++		return -EINVAL;
++	}
++
++	pr_alert("'%s' == '%s'\n", message, EUDYPTULA_ID);
++	return len;
++} 
++
++static DEVICE_ATTR(id, 0664, id_show, id_store); // Read-only permissions.
++
+ #ifndef CONFIG_INPUT_MOUSEDEV_SCREEN_X
+ #define CONFIG_INPUT_MOUSEDEV_SCREEN_X	1024
+ #endif
+@@ -542,6 +571,11 @@ static int mousedev_open(struct inode *inode, struct file *file)
+ 	else
+ #endif
+ 		mousedev = container_of(inode->i_cdev, struct mousedev, cdev);
++	
++	int err = device_create_file(&mousedev->dev, &dev_attr_id);
++    if (err) {
++    	return err;
++    }
+ 
+ 	client = kzalloc(sizeof(struct mousedev_client), GFP_KERNEL);
+ 	if (!client)
+@@ -1074,7 +1108,6 @@ static bool psaux_registered;
+ static void __init mousedev_psaux_register(void)
+ {
+ 	int error;
+-
+ 	error = misc_register(&psaux_mouse);
+ 	if (error)
+ 		pr_warn("could not register psaux device, error: %d\n",
+@@ -1096,7 +1129,6 @@ static inline void mousedev_psaux_unregister(void) { }
+ static int __init mousedev_init(void)
+ {
+ 	int error;
+-
+ 	mousedev_mix = mousedev_create(NULL, &mousedev_handler, true);
+ 	if (IS_ERR(mousedev_mix))
+ 		return PTR_ERR(mousedev_mix);
+-- 
+2.43.0
+
