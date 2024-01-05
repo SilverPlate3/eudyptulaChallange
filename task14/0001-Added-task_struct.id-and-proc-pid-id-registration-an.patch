@@ -54,7 +54,7 @@ index dd31e3b6bf77..d2fb9a34df30 100644
 +	}
 +
 +	mmput(mm);
-+
++	put_task_struct(tsk);
 +	*pos += 10;
 +	return 10;
 +}
