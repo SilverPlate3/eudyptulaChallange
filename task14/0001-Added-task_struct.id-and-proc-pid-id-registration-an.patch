@@ -1,0 +1,103 @@
+From c46c55096d9ab63b73eb2f47567dc73ffa0957bd Mon Sep 17 00:00:00 2001
+From: root <arielsilver77@gmail.com>
+Date: Fri, 5 Jan 2024 17:49:20 +0200
+Subject: [PATCH] Added task_struct.id and /proc/pid/id registration and
+ functionality
+
+---
+ fs/proc/base.c        | 50 +++++++++++++++++++++++++++++++++++++++++++
+ include/linux/sched.h |  3 ++-
+ 2 files changed, 52 insertions(+), 1 deletion(-)
+
+diff --git a/fs/proc/base.c b/fs/proc/base.c
+index dd31e3b6bf77..d2fb9a34df30 100644
+--- a/fs/proc/base.c
++++ b/fs/proc/base.c
+@@ -378,6 +378,54 @@ static const struct file_operations proc_pid_cmdline_ops = {
+ 	.llseek	= generic_file_llseek,
+ };
+ 
++
++static ssize_t proc_id_read(struct file *file, char __user *buf, size_t count, loff_t *pos)
++{
++	if(*pos >= 10)
++	{
++		return 0;
++	}
++
++	struct task_struct *tsk = get_proc_task(file_inode(file));
++	if(!tsk)
++	{
++		return -ESRCH;
++	}
++	if(!tsk->id)
++	{
++		tsk->id = 999; // My fake eudyptula id;
++	}
++
++	char message[10] = {0};
++	struct mm_struct *mm = get_task_mm(tsk);
++	if(!mm)
++	{
++		put_task_struct(tsk);
++		return -ESRCH;
++	}
++
++	spin_lock(&mm->arg_lock);
++	sprintf(message, "%d", tsk->id);
++	++tsk->id;
++	spin_unlock(&mm->arg_lock);
++
++	if(copy_to_user(buf, message, sizeof(message)))
++	{
++		pr_alert("copy_to_user failed\n");
++	}
++
++	mmput(mm);
++
++	*pos += 10;
++	return 10;
++}
++
++static const struct file_operations proc_id_ops = {
++	.read	= proc_id_read,
++	.llseek	= generic_file_llseek,
++};
++
++
+ #ifdef CONFIG_KALLSYMS
+ /*
+  * Provides a wchan file via kallsyms in a proper one-value-per-file format.
+@@ -3274,6 +3322,7 @@ static const struct pid_entry tgid_base_stuff[] = {
+ 	ONE("syscall",    S_IRUSR, proc_pid_syscall),
+ #endif
+ 	REG("cmdline",    S_IRUGO, proc_pid_cmdline_ops),
++	REG("id",   	  S_IRUGO, proc_id_ops),
+ 	ONE("stat",       S_IRUGO, proc_tgid_stat),
+ 	ONE("statm",      S_IRUGO, proc_pid_statm),
+ 	REG("maps",       S_IRUGO, proc_pid_maps_operations),
+@@ -3621,6 +3670,7 @@ static const struct pid_entry tid_base_stuff[] = {
+ 	ONE("syscall",   S_IRUSR, proc_pid_syscall),
+ #endif
+ 	REG("cmdline",   S_IRUGO, proc_pid_cmdline_ops),
++	REG("id",   	 S_IRUGO, proc_id_ops),
+ 	ONE("stat",      S_IRUGO, proc_tid_stat),
+ 	ONE("statm",     S_IRUGO, proc_pid_statm),
+ 	REG("maps",      S_IRUGO, proc_pid_maps_operations),
+diff --git a/include/linux/sched.h b/include/linux/sched.h
+index 292c31697248..877606dabafb 100644
+--- a/include/linux/sched.h
++++ b/include/linux/sched.h
+@@ -767,7 +767,8 @@ struct task_struct {
+ 	/* Per task flags (PF_*), defined further below: */
+ 	unsigned int			flags;
+ 	unsigned int			ptrace;
+-
++	unsigned int			id;
++	
+ #ifdef CONFIG_SMP
+ 	int				on_cpu;
+ 	struct __call_single_node	wake_entry;
+-- 
+2.25.1
+
