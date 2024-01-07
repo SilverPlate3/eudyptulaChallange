@@ -1,0 +1,76 @@
+From c9fb65e238c252e3db12b5d5092695f4cf498af4 Mon Sep 17 00:00:00 2001
+From: root <arielsilver77@gmail.com>
+Date: Sat, 6 Jan 2024 20:55:48 +0200
+Subject: [PATCH] Add syscall
+
+---
+ arch/arm64/include/asm/unistd32.h      | 3 ++-
+ arch/x86/entry/syscalls/syscall_64.tbl | 3 ++-
+ include/linux/syscalls.h               | 2 ++
+ kernel/sys.c                           | 9 +++++++++
+ 4 files changed, 15 insertions(+), 2 deletions(-)
+
+diff --git a/arch/arm64/include/asm/unistd32.h b/arch/arm64/include/asm/unistd32.h
+index 9f7c1bf99526..310445df3350 100644
+--- a/arch/arm64/include/asm/unistd32.h
++++ b/arch/arm64/include/asm/unistd32.h
+@@ -919,7 +919,8 @@ __SYSCALL(__NR_futex_wake, sys_futex_wake)
+ __SYSCALL(__NR_futex_wait, sys_futex_wait)
+ #define __NR_futex_requeue 456
+ __SYSCALL(__NR_futex_requeue, sys_futex_requeue)
+-
++#define __NR_eudyptula 457
++__SYSCALL(__NR_eudyptula, sys_eudyptula)
+ /*
+  * Please add new compat syscalls above this comment and update
+  * __NR_compat_syscalls in asm/unistd.h.
+diff --git a/arch/x86/entry/syscalls/syscall_64.tbl b/arch/x86/entry/syscalls/syscall_64.tbl
+index 8cb8bf68721c..1de7949b8426 100644
+--- a/arch/x86/entry/syscalls/syscall_64.tbl
++++ b/arch/x86/entry/syscalls/syscall_64.tbl
+@@ -377,7 +377,8 @@
+ 453	64	map_shadow_stack	sys_map_shadow_stack
+ 454	common	futex_wake		sys_futex_wake
+ 455	common	futex_wait		sys_futex_wait
+-456	common	futex_requeue		sys_futex_requeue
++456	common	futex_requeue	sys_futex_requeue
++457	common	eudyptula	    sys_eudyptula
+ 
+ #
+ # Due to a historical design error, certain syscalls are numbered differently
+diff --git a/include/linux/syscalls.h b/include/linux/syscalls.h
+index fd9d12de7e92..59fae4217e4d 100644
+--- a/include/linux/syscalls.h
++++ b/include/linux/syscalls.h
+@@ -558,6 +558,8 @@ asmlinkage long sys_futex_wait(void __user *uaddr, unsigned long val, unsigned l
+ asmlinkage long sys_futex_requeue(struct futex_waitv __user *waiters,
+ 				  unsigned int flags, int nr_wake, int nr_requeue);
+ 
++asmlinkage long sys_eudyptula(unsigned int high_id, unsigned int low_id);
++
+ asmlinkage long sys_nanosleep(struct __kernel_timespec __user *rqtp,
+ 			      struct __kernel_timespec __user *rmtp);
+ asmlinkage long sys_nanosleep_time32(struct old_timespec32 __user *rqtp,
+diff --git a/kernel/sys.c b/kernel/sys.c
+index e219fcfa112d..24f431dec2fa 100644
+--- a/kernel/sys.c
++++ b/kernel/sys.c
+@@ -1397,6 +1397,15 @@ SYSCALL_DEFINE2(sethostname, char __user *, name, int, len)
+ 	return errno;
+ }
+ 
++SYSCALL_DEFINE2(eudyptula, unsigned int, high_id, unsigned int, low_id)
++{
++	const unsigned long long eudyptula_id = 0x5d658d788cc9;
++	unsigned long long id = ((unsigned long long)high_id << 32) | (unsigned long long)low_id;
++    pr_alert("h - '%u'  l - '%u'  = %llu     looking for: %llu\n\n", high_id, low_id, id, eudyptula_id);
++    return id == eudyptula_id ? 0 : EINVAL;
++}
++
++
+ #ifdef __ARCH_WANT_SYS_GETHOSTNAME
+ 
+ SYSCALL_DEFINE2(gethostname, char __user *, name, int, len)
+-- 
+2.25.1
+
