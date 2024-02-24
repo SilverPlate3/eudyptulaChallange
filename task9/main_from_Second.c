@@ -26,20 +26,17 @@ static ssize_t id_show(struct kobject *kobj, struct kobj_attribute *attr, char *
 
 static ssize_t id_store(struct kobject *kobj, struct kobj_attribute *attr, const char *buf, size_t count)
 {
-    pr_info("id_store - 0 %d\n", count);
     if(count != EUDYPTULA_ID_LEN_EXCLUDING_NULL)
         return -EINVAL;
 
-    pr_info("id_store - 1\n");
     char input[EUDYPTULA_ID_LEN_EXCLUDING_NULL] = {0};
     sscanf(buf, "%s", input); 
 
-    pr_info("id_store - 2\ninput: '%s'\nbuf: '%s'\n", input, buf);
     if (strcmp(input, EUDYPTULA_ID) != 0) 
     {
         return -EINVAL;
     }
-    pr_info("id_store - 3\n");
+
     return count;
 }
 
@@ -62,16 +59,13 @@ static ssize_t foo_show(struct kobject *kobj, struct kobj_attribute *attr, char 
 
 static ssize_t foo_store(struct kobject *kobj, struct kobj_attribute *attr, const char *buf, size_t count)
 {
-    pr_info("foo_write - 0 size: %d\n", count);
     mutex_lock(&mymutex);
     int size = min(count, (size_t)PAGE_SIZE - 1);
-    pr_info("foo_write - 1\n");
     memset(foo, 0, PAGE_SIZE);
     sscanf(buf, "%s", foo); 
 
-    pr_info("foo_write - 2. foo: '%s'\n", foo);
     foo[size] = '\0';
-    pr_info("foo_write - 3. foo: '%s'\n", foo);
+
     mutex_unlock(&mymutex);
     return size;
 }
@@ -96,14 +90,11 @@ static int Init(void)
     pr_info("111111\n");
 
     example_kobj = kobject_create_and_add(DIR_NAME, kernel_kobj);
-    pr_info("22222222\n");
 	if (!example_kobj)
 		return -ENOMEM;
 
-    pr_info("3333333\n");
     if(sysfs_create_group(example_kobj, &attr_group))
     {
-        pr_info("4444444444\n");
         kobject_put(example_kobj);
         return -1;
     }
