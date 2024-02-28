@@ -1,0 +1,30 @@
+From cb824302ab223f6f058eb2c11dd95d733b5174a9 Mon Sep 17 00:00:00 2001
+From: Ariel Silver <arielsilver77@gmail.com>
+Date: Wed, 28 Feb 2024 08:48:42 +0200
+Subject: [PATCH] Staging: rtl8192e: Sparse warning regarding variable
+ declaration
+
+Fixed sparse warning: "'dm_rx_path_sel_table' was not declared. Should it be static?"
+As dm_rx_path_sel_table is used only in rtl_dm.c it should be static.
+
+Signed-off-by: Ariel Silver <arielsilver77@gmail.com>
+---
+ drivers/staging/rtl8192e/rtl8192e/rtl_dm.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/drivers/staging/rtl8192e/rtl8192e/rtl_dm.c b/drivers/staging/rtl8192e/rtl8192e/rtl_dm.c
+index 92143c50c149..850ee6ae1f02 100644
+--- a/drivers/staging/rtl8192e/rtl8192e/rtl_dm.c
++++ b/drivers/staging/rtl8192e/rtl8192e/rtl_dm.c
+@@ -144,7 +144,7 @@ const u8 dm_cck_tx_bb_gain_ch14[CCK_TX_BB_GAIN_TABLE_LEN][8] = {
+ /*------------------------Define global variable-----------------------------*/
+ struct dig_t dm_digtable;
+ 
+-struct drx_path_sel dm_rx_path_sel_table;
++static struct drx_path_sel dm_rx_path_sel_table;
+ /*------------------------Define global variable-----------------------------*/
+ 
+ 
+-- 
+2.25.1
+
