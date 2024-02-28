@@ -1,0 +1,72 @@
+From b523b0e7bd4113d061c970114052bcad3f35ad5d Mon Sep 17 00:00:00 2001
+From: SilverPlate3 <arielsilver77@gmail.com>
+Date: Wed, 28 Feb 2024 07:55:50 +0200
+Subject: [PATCH] Add syscall
+
+---
+ arch/x86/entry/syscalls/syscall_64.tbl | 1 +
+ fs/open.c                              | 5 +++++
+ include/linux/syscalls.h               | 1 +
+ include/uapi/asm-generic/unistd.h      | 4 +++-
+ 4 files changed, 10 insertions(+), 1 deletion(-)
+
+diff --git a/arch/x86/entry/syscalls/syscall_64.tbl b/arch/x86/entry/syscalls/syscall_64.tbl
+index 7e8d46f4147f..2f073da90121 100644
+--- a/arch/x86/entry/syscalls/syscall_64.tbl
++++ b/arch/x86/entry/syscalls/syscall_64.tbl
+@@ -383,6 +383,7 @@
+ 459	common	lsm_get_self_attr	sys_lsm_get_self_attr
+ 460	common	lsm_set_self_attr	sys_lsm_set_self_attr
+ 461	common	lsm_list_modules	sys_lsm_list_modules
++462 64      eudyptula           sys_eudyptula
+ 
+ #
+ # Due to a historical design error, certain syscalls are numbered differently
+diff --git a/fs/open.c b/fs/open.c
+index a84d21e55c39..d08602efa5d4 100644
+--- a/fs/open.c
++++ b/fs/open.c
+@@ -1427,6 +1427,11 @@ SYSCALL_DEFINE3(open, const char __user *, filename, int, flags, umode_t, mode)
+ 	return do_sys_open(AT_FDCWD, filename, flags, mode);
+ }
+ 
++SYSCALL_DEFINE2(eudyptula, int, a, int, b)
++{
++	return a > b ? a : b;
++}
++
+ SYSCALL_DEFINE4(openat, int, dfd, const char __user *, filename, int, flags,
+ 		umode_t, mode)
+ {
+diff --git a/include/linux/syscalls.h b/include/linux/syscalls.h
+index 77eb9b0e7685..57bd9e5dd483 100644
+--- a/include/linux/syscalls.h
++++ b/include/linux/syscalls.h
+@@ -964,6 +964,7 @@ asmlinkage long sys_lsm_get_self_attr(unsigned int attr, struct lsm_ctx *ctx,
+ asmlinkage long sys_lsm_set_self_attr(unsigned int attr, struct lsm_ctx *ctx,
+ 				      size_t size, __u32 flags);
+ asmlinkage long sys_lsm_list_modules(u64 *ids, size_t *size, u32 flags);
++asmlinkage long sys_eudyptula(int a, int b);
+ 
+ /*
+  * Architecture-specific system calls
+diff --git a/include/uapi/asm-generic/unistd.h b/include/uapi/asm-generic/unistd.h
+index 75f00965ab15..c3cb07592229 100644
+--- a/include/uapi/asm-generic/unistd.h
++++ b/include/uapi/asm-generic/unistd.h
+@@ -841,9 +841,11 @@ __SYSCALL(__NR_lsm_get_self_attr, sys_lsm_get_self_attr)
+ __SYSCALL(__NR_lsm_set_self_attr, sys_lsm_set_self_attr)
+ #define __NR_lsm_list_modules 461
+ __SYSCALL(__NR_lsm_list_modules, sys_lsm_list_modules)
++#define __NR_eudyptula 462
++__SYSCALL(__NR_eudyptula, sys_eudyptula)
+ 
+ #undef __NR_syscalls
+-#define __NR_syscalls 462
++#define __NR_syscalls 463
+ 
+ /*
+  * 32 bit systems traditionally used different
+-- 
+2.25.1
+
