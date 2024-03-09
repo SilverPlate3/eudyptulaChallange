@@ -129,6 +129,6 @@ static void misc_exit(void)
 module_init(misc_init);
 module_exit(misc_exit);
 
-MODULE_AUTHOR("Chuckleberryfinn");
+MODULE_AUTHOR("Ariel");
 MODULE_DESCRIPTION("Example misc driver.");
 MODULE_LICENSE("Dual BSD/GPL");

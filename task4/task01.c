@@ -15,7 +15,7 @@
 #include <linux/kernel.h>
 
 MODULE_LICENSE("GPL");
-MODULE_AUTHOR("David Wittman");
+MODULE_AUTHOR("Ariel");
 MODULE_DESCRIPTION("Hello World example");
 
 int init_module(void)

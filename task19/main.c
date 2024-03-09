@@ -78,6 +78,6 @@ static void netfilter_exit(void)
 module_init(netfilter_start);
 module_exit(netfilter_exit);
 
-MODULE_AUTHOR("Chuckleberryfinn");
+MODULE_AUTHOR("Ariel");
 MODULE_DESCRIPTION("Example misc driver.");
 MODULE_LICENSE("Dual BSD/GPL");

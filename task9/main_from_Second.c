@@ -111,6 +111,6 @@ static void Exit(void)
 module_init(Init);
 module_exit(Exit);
 
-MODULE_AUTHOR("Chuckleberryfinn");
+MODULE_AUTHOR("Ariel");
 MODULE_DESCRIPTION("Example misc driver.");
 MODULE_LICENSE("Dual BSD/GPL");

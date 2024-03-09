@@ -116,6 +116,6 @@ module_init(LinkedListStart);
 module_exit(LinkedListExit);
 
 MODULE_LICENSE("GPL");
-MODULE_AUTHOR("Your Name");
+MODULE_AUTHOR("Ariel");
 MODULE_DESCRIPTION("A simple example Linux module.");
 MODULE_VERSION("0.1");
