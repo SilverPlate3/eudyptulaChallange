@@ -1,0 +1,134 @@
+From 71ed114d950e8bc6222d86aedea6872b64335e83 Mon Sep 17 00:00:00 2001
+From: SilverPlate3 <arielsilver77@gmail.com>
+Date: Sat, 9 Mar 2024 13:17:50 +0200
+Subject: [PATCH] change fat32/16 volume_label via ioctl
+
+---
+ fs/fat/dir.c                  | 70 +++++++++++++++++++++++++++++++++++
+ include/uapi/linux/msdos_fs.h |  1 +
+ 2 files changed, 71 insertions(+)
+
+diff --git a/fs/fat/dir.c b/fs/fat/dir.c
+index 00235b8a1823..1a5fcf3e8cf0 100644
+--- a/fs/fat/dir.c
++++ b/fs/fat/dir.c
+@@ -784,6 +784,67 @@ static int fat_ioctl_readdir(struct inode *inode, struct file *file,
+ 	return ret;
+ }
+ 
++static int find_entry_with_attr_volume(struct inode *dir, loff_t *pos, struct buffer_head **bh, struct msdos_dir_entry **de)
++{
++        while (fat_get_entry(dir, pos, bh, de) >= 0) {
++                if ((*de)->attr & ATTR_VOLUME)
++                        return 0;
++        }
++        return -ENOENT;
++}
++int fat_ioctl_set_label(struct file *file, unsigned long arg)
++{
++        struct inode *inode = file_inode(file);
++        unsigned char new_volume_label[MSDOS_NAME] = {0};
++        int error;
++        struct fat_slot_info sinfo;
++        struct fat_slot_info * pSinfo = &sinfo;
++
++        // Get name from ioctl
++        error = copy_from_user(new_volume_label, (char __user *)arg, MSDOS_NAME);
++        if(error)
++        {
++                pr_info("copy_from_user failed: %d'\n", error);
++                goto fat_ioctl_set_label_out;
++        }
++        pr_info("new_volume_label: '%s'\n", new_volume_label);
++ 
++        // Get write access to mount + lock inode.
++        error = mnt_want_write_file(file);
++        if (error)
++        {
++                pr_info("mnt_want_write_file: %d'\n", error);
++                goto fat_ioctl_set_label_out;
++        }
++        inode_lock(inode);
++
++        // Find and change the volume label
++        pSinfo->slot_off = 0;
++        pSinfo->bh = NULL;
++        while (find_entry_with_attr_volume(inode, &pSinfo->slot_off, &pSinfo->bh, &pSinfo->de) != 0) {
++                pr_info("not found yet. de->name '%s'  slot_off: '%llu'\n", pSinfo->de->name, pSinfo->slot_off);
++        }
++        pr_info("Found label entry! de->name '%s'\n", pSinfo->de->name);
++
++        memset(sinfo.de->name, 0, MSDOS_NAME);
++        strncpy(sinfo.de->name, new_volume_label, MSDOS_NAME);
++
++        // Save the changes
++        error = fat_add_entries(inode, pSinfo->de, 1, pSinfo);
++        if (error)
++        {
++                pr_info("fat_add_entries failed: %d'\n", error);
++                goto fat_ioctl_set_label_unlock_inode;
++        }
++        (void)fat_sync_inode(inode);
++
++fat_ioctl_set_label_unlock_inode:
++        inode_unlock(inode);
++        mnt_drop_write_file(file);
++fat_ioctl_set_label_out:
++        return error;
++}
++
+ static long fat_dir_ioctl(struct file *filp, unsigned int cmd,
+ 			  unsigned long arg)
+ {
+@@ -791,6 +852,10 @@ static long fat_dir_ioctl(struct file *filp, unsigned int cmd,
+ 	struct __fat_dirent __user *d1 = (struct __fat_dirent __user *)arg;
+ 	int short_only, both;
+ 
++	char buf[256] = {0};
++    char *path = dentry_path_raw(filp->f_path.dentry, buf, 255);
++    pr_info("ioctl called for path: '%s'\n", path);
++
+ 	switch (cmd) {
+ 	case VFAT_IOCTL_READDIR_SHORT:
+ 		short_only = 1;
+@@ -800,6 +865,8 @@ static long fat_dir_ioctl(struct file *filp, unsigned int cmd,
+ 		short_only = 0;
+ 		both = 1;
+ 		break;
++	case FAT_IOCTL_SET_LABEL:
++    	return fat_ioctl_set_label(filp, arg);
+ 	default:
+ 		return fat_generic_ioctl(filp, cmd, arg);
+ 	}
+@@ -819,6 +886,7 @@ static long fat_dir_ioctl(struct file *filp, unsigned int cmd,
+ #ifdef CONFIG_COMPAT
+ #define	VFAT_IOCTL_READDIR_BOTH32	_IOR('r', 1, struct compat_dirent[2])
+ #define	VFAT_IOCTL_READDIR_SHORT32	_IOR('r', 2, struct compat_dirent[2])
++#define FAT_IOCTL_SET_LABEL32       _IOW('r', 0x14, char *)
+ 
+ FAT_IOCTL_FILLDIR_FUNC(fat_compat_ioctl_filldir, compat_dirent)
+ 
+@@ -838,6 +906,8 @@ static long fat_compat_dir_ioctl(struct file *filp, unsigned cmd,
+ 		short_only = 0;
+ 		both = 1;
+ 		break;
++	case FAT_IOCTL_SET_LABEL32:
++        return fat_ioctl_set_label(filp, arg);
+ 	default:
+ 		return fat_generic_ioctl(filp, cmd, (unsigned long)arg);
+ 	}
+diff --git a/include/uapi/linux/msdos_fs.h b/include/uapi/linux/msdos_fs.h
+index a5773899f4d9..b9f6be33be85 100644
+--- a/include/uapi/linux/msdos_fs.h
++++ b/include/uapi/linux/msdos_fs.h
+@@ -104,6 +104,7 @@ struct __fat_dirent {
+ #define FAT_IOCTL_SET_ATTRIBUTES	_IOW('r', 0x11, __u32)
+ /*Android kernel has used 0x12, so we use 0x13*/
+ #define FAT_IOCTL_GET_VOLUME_ID		_IOR('r', 0x13, __u32)
++#define FAT_IOCTL_SET_LABEL			_IOW('r', 0x14, char *)
+ 
+ struct fat_boot_sector {
+ 	__u8	ignored[3];	/* Boot strap short or near jump */
+-- 
+2.25.1
+
